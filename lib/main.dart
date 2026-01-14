@@ -6,6 +6,7 @@ import 'providers/user_provider.dart';
 import 'providers/app_state_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/pin_screen.dart';
+import 'screens/login_screen.dart';
 
 import 'providers/wallet_provider.dart';
 import 'supabase/client.dart';
@@ -86,7 +87,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const PinScreen(),
+        home: const LoginScreen(),
       ),
     );
   }
