@@ -67,7 +67,7 @@ class HistoryScreen extends StatelessWidget {
           _buildTransactionCard(
             icon: Icons.savings_outlined,
             iconColor: Colors.black87,
-            bgIconColor: const Color(0xFF10B981).withOpacity(0.1),
+            bgIconColor: const Color(0xFF10B981).withValues(alpha: 0.1),
             title: 'Cambio en Oxxo',
             time: '10:25 a.m.',
             amount: '+\$39.21',
@@ -112,7 +112,7 @@ class HistoryScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

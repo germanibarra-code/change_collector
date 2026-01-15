@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/wallet_provider.dart';
+import '../providers/app_state_provider.dart';
 import 'profile_screen.dart'; // Reuse the edit screen logic if needed
 
 class AccountScreen extends StatelessWidget {
@@ -10,6 +11,8 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    final appState = Provider.of<AppStateProvider>(context);
+    final theme = Theme.of(context);
 
     // Avatar configs again (could be centralized)
     final List<IconData> icons = [
@@ -52,8 +55,8 @@ class AccountScreen extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: colors[userProvider.userProfile.avatarIndex].withOpacity(
-                0.2,
+              color: colors[userProvider.userProfile.avatarIndex].withValues(
+                alpha: 0.2,
               ),
               shape: BoxShape.circle,
             ),
@@ -71,7 +74,10 @@ class AccountScreen extends StatelessWidget {
           ),
           Text(
             userProvider.userProfile.email,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 16,
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -83,59 +89,77 @@ class AccountScreen extends StatelessWidget {
               );
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF10B981)),
+              side: BorderSide(color: theme.colorScheme.primary),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             ),
-            child: const Text(
+            child: Text(
               'Editar Perfil',
-              style: TextStyle(color: Color(0xFF10B981)),
+              style: TextStyle(color: theme.colorScheme.primary),
             ),
           ),
 
           const SizedBox(height: 48),
 
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'GENERAL',
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color?.withValues(
+                  alpha: 0.6,
+                ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
           _buildSettingsItem(
+            context,
             Icons.verified_user_outlined,
             'Seguridad',
             onTap: () {},
           ),
           const SizedBox(height: 12),
           _buildSettingsItem(
+            context,
             Icons.notifications_none,
             'Notificaciones',
             onTap: () {},
           ),
           const SizedBox(height: 12),
           _buildSwitchItem(
+            context,
             Icons.dark_mode_outlined,
             'Modo Oscuro',
-            false,
-          ), // Mock switch
+            appState.isDarkMode,
+            onChanged: (value) async {
+              debugPrint('🔄 Dark mode switch toggled to: $value');
+              await appState.toggleDarkMode();
+            },
+          ),
           const SizedBox(height: 12),
           _buildSettingsItem(
+            context,
             Icons.download_outlined,
             'Exportar Datos (Respaldo)',
             onTap: () {},
           ),
 
           const SizedBox(height: 32),
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'APP',
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color?.withValues(
+                  alpha: 0.6,
+                ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -191,9 +215,9 @@ class AccountScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.05),
+                color: Colors.red.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.red.withOpacity(0.1)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -219,37 +243,55 @@ class AccountScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsItem(
+    BuildContext context,
     IconData icon,
     String title, {
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: Colors.grey.shade600),
+        leading: Icon(
+          icon,
+          color: theme.iconTheme.color?.withValues(alpha: 0.6),
+        ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey.shade300),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: theme.iconTheme.color?.withValues(alpha: 0.3),
+        ),
       ),
     );
   }
 
-  Widget _buildSwitchItem(IconData icon, String title, bool value) {
+  Widget _buildSwitchItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    bool value, {
+    required Function(bool) onChanged,
+  }) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.grey.shade600),
+        leading: Icon(
+          icon,
+          color: theme.iconTheme.color?.withValues(alpha: 0.6),
+        ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: Switch(
           value: value,
-          onChanged: (val) {},
-          activeColor: const Color(0xFF10B981),
+          onChanged: onChanged,
+          activeColor: theme.colorScheme.primary,
         ),
       ),
     );

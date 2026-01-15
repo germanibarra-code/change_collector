@@ -50,7 +50,7 @@ class AvatarSelector extends StatelessWidget {
           onTap: () => onSelected(index),
           child: Container(
             decoration: BoxDecoration(
-              color: colors[index].withOpacity(0.2),
+              color: colors[index].withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: isSelected
                   ? Border.all(color: colors[index], width: 3)

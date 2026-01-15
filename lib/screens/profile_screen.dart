@@ -50,6 +50,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     // Avatar configs
     final List<IconData> icons = [
       Icons.person,
@@ -73,18 +75,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), // Light background
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Editar Perfil',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: theme.textTheme.titleLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -106,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: colors[_selectedAvatarIndex].withOpacity(0.2),
+                    color: colors[_selectedAvatarIndex].withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -117,10 +122,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 "Elige tu avatar",
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(
+                    alpha: 0.6,
+                  ),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -129,9 +136,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Avatar Selector Widget
               Container(
                 height: 60,
-                // We'll trust AvatarSelector works, or we can inline a simple selector here if it's broken
-                // Assuming AvatarSelector is compatible. If not, we'll replace it soon.
-                // Let's use a horizontal list for simplicity to guarantee look & feel
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: icons.length,
@@ -144,19 +148,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? colors[index].withOpacity(0.2)
-                              : Colors.white,
+                              ? colors[index].withValues(alpha: 0.2)
+                              : theme.cardColor,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: isSelected
                                 ? colors[index]
-                                : Colors.grey.shade200,
+                                : theme.dividerColor,
                             width: 2,
                           ),
                         ),
                         child: Icon(
                           icons[index],
-                          color: isSelected ? colors[index] : Colors.grey,
+                          color: isSelected
+                              ? colors[index]
+                              : theme.iconTheme.color?.withValues(alpha: 0.5),
                           size: 24,
                         ),
                       ),
@@ -172,6 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: 'Nombre Completo',
                 controller: _nameController,
                 icon: Icons.person_outline,
+                theme: theme,
               ),
               const SizedBox(height: 20),
               _buildTextField(
@@ -179,6 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 controller: _emailController,
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
+                theme: theme,
               ),
 
               const SizedBox(height: 40),
@@ -190,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
+                    backgroundColor: theme.colorScheme.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -217,6 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String label,
     required TextEditingController controller,
     required IconData icon,
+    required ThemeData theme,
     TextInputType? keyboardType,
   }) {
     return Column(
@@ -224,36 +233,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF374151),
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
           validator: (value) {
-            if (value == null || value.isEmpty)
+            if (value == null || value.isEmpty) {
               return 'Este campo es requerido';
+            }
             return null;
           },
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
-            prefixIcon: Icon(icon, color: Colors.grey.shade400),
+            fillColor: theme.cardColor,
+            prefixIcon: Icon(
+              icon,
+              color: theme.iconTheme.color?.withValues(alpha: 0.5),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: theme.dividerColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: theme.dividerColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+              borderSide: BorderSide(
+                color: theme.colorScheme.primary,
+                width: 2,
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),

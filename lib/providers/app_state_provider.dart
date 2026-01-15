@@ -4,12 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppStateProvider with ChangeNotifier {
   bool _showTour = false;
   bool _tourCompleted = false;
+  bool _isDarkMode = false;
 
   bool get showTour => _showTour;
   bool get tourCompleted => _tourCompleted;
+  bool get isDarkMode => _isDarkMode;
 
   AppStateProvider() {
     _checkTourStatus();
+    _loadThemePreference();
   }
 
   Future<void> _checkTourStatus() async {
@@ -20,6 +23,22 @@ class AppStateProvider with ChangeNotifier {
     // For now, let's just expose the state.
     // Usually, we'd trigger it on the first screen load if !_tourCompleted.
     notifyListeners();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isDarkMode = prefs.getBool('dark_mode') ?? false;
+    notifyListeners();
+  }
+
+  Future<void> toggleDarkMode() async {
+    _isDarkMode = !_isDarkMode;
+    debugPrint('🌙 Dark mode toggled: $_isDarkMode');
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_mode', _isDarkMode);
+    debugPrint('💾 Dark mode saved to preferences: $_isDarkMode');
   }
 
   void startTour() {

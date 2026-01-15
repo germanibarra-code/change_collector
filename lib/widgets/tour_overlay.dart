@@ -22,7 +22,7 @@ class TourOverlay extends StatelessWidget {
     return Stack(
       children: [
         // Darken background slightly
-        Positioned.fill(child: Container(color: Colors.black.withOpacity(0.7))),
+        Positioned.fill(child: Container(color: Colors.black.withValues(alpha: 0.7))),
         // Tour Content
         Center(
           child: ClipRRect(
@@ -33,12 +33,12 @@ class TourOverlay extends StatelessWidget {
                 margin: const EdgeInsets.all(32),
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -80,7 +80,7 @@ class TourOverlay extends StatelessWidget {
                           child: Text(
                             'Omitir',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                         ),

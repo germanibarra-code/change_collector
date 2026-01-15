@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final walletProvider = Provider.of<WalletProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), // Light Gray background
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -127,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 border: Border.all(
                                   color: const Color(
                                     0xFF10B981,
-                                  ).withOpacity(0.3),
+                                  ).withValues(alpha: 0.3),
                                 ),
                               ),
                               child: const Icon(
@@ -317,10 +317,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color:
                                       transaction.type ==
                                           TransactionType.expense
-                                      ? Colors.red.withOpacity(0.1)
+                                      ? Colors.red.withValues(alpha: 0.1)
                                       : const Color(
                                           0xFF10B981,
-                                        ).withOpacity(0.1),
+                                        ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -404,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -439,10 +439,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -452,9 +452,11 @@ class _HomeScreenState extends State<HomeScreen> {
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF10B981),
-          unselectedItemColor: Colors.grey,
-          backgroundColor: Colors.white,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Theme.of(
+            context,
+          ).iconTheme.color?.withValues(alpha: 0.5),
+          backgroundColor: Theme.of(context).cardColor,
           elevation: 0,
           items: [
             BottomNavigationBarItem(
