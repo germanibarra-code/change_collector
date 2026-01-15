@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _simulateScan(context),
+                          onPressed: () => _scanToCollect(context),
                           icon: const Icon(Icons.qr_code_scanner),
                           label: const Text('Escanear Mi Cambio'),
                           style: ElevatedButton.styleFrom(
@@ -173,10 +173,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Pay -> Simulator
+                          // Pay -> Payment QR
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => _simulateScan(context),
+                              onTap: () => _scanToPay(context),
                               child: const QuickAction(
                                 icon: Icons.qr_code_scanner,
                                 label: 'Pagar',
@@ -400,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () => _simulateScan(context),
+                    onTap: () => _scanToCollect(context),
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -430,7 +430,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           // Index 2: History
-          const SafeArea(child: HistoryScreen()),
+          SafeArea(
+            child: HistoryScreen(
+              onBack: () => setState(() => _currentIndex = 0),
+            ),
+          ),
 
           // Index 3: Account
           const SafeArea(child: AccountScreen()),
@@ -490,8 +494,139 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // QR SCAN SIMULATOR LOGIC
-  void _simulateScan(BuildContext context) async {
+  // QR SCAN TO PAY (EXPENSE)
+  void _scanToPay(BuildContext context) async {
+    final walletProvider = Provider.of<WalletProvider>(context, listen: false);
+
+    // 1. Show "Scanning" dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const SimpleDialog(
+        children: [
+          Center(
+            child: Column(
+              children: [
+                CircularProgressIndicator(color: Color(0xFF10B981)),
+                SizedBox(height: 16),
+                Text("Detectando código QR..."),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // 2. Wait 2 seconds
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading
+
+    // 3. Randomize a payment amount
+    final amounts = [12.50, 45.00, 8.20, 150.00, 5.00];
+    final amount = (amounts..shuffle()).first;
+
+    // 4. Check if user has sufficient balance
+    if (walletProvider.totalBalance < amount) {
+      // Show insufficient funds dialog
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              SizedBox(width: 12),
+              Text("Saldo Insuficiente"),
+            ],
+          ),
+          content: Text(
+            "No tienes suficiente saldo para realizar este pago de \$$amount.\n\nTu saldo actual es de \$${walletProvider.totalBalance.toStringAsFixed(2)}",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Entendido"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 5. Show "Payment Ready" dialog with confirm
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.qr_code_scanner,
+              color: Color(0xFF10B981),
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "¡Código QR Detectado!",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Monto a pagar: \$$amount",
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // ADD PAYMENT (EXPENSE) TO PROVIDER
+                  walletProvider.addTransaction(
+                    TransactionItem(
+                      id: DateTime.now().toString(),
+                      title: 'Pago QR #${DateTime.now().minute}',
+                      amount: amount,
+                      date: DateTime.now(),
+                      type: TransactionType.expense,
+                    ),
+                  );
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Pago realizado exitosamente'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text("Confirmar Pago"),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // QR SCAN TO COLLECT (INCOME)
+  void _scanToCollect(BuildContext context) async {
+    final walletProvider = Provider.of<WalletProvider>(context, listen: false);
+
     // 1. Show "Scanning" dialog
     showDialog(
       context: context,
@@ -520,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final amounts = [12.50, 45.00, 8.20, 150.00, 5.00];
     final amount = (amounts..shuffle()).first;
 
-    // 4. Show "Found" dialog with confirm
+    // 4. Show "Found" dialog with confirm (no balance check needed for income)
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -547,11 +682,8 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // ADD TO PROVIDER
-                  Provider.of<WalletProvider>(
-                    context,
-                    listen: false,
-                  ).addTransaction(
+                  // ADD INCOME TO PROVIDER
+                  walletProvider.addTransaction(
                     TransactionItem(
                       id: DateTime.now().toString(),
                       title: 'Ahorro Ticket #${DateTime.now().minute}',

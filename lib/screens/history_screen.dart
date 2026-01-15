@@ -1,95 +1,163 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../providers/wallet_provider.dart';
+import '../models/transaction_item.dart';
 
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
+class HistoryScreen extends StatefulWidget {
+  final VoidCallback? onBack;
+
+  const HistoryScreen({super.key, this.onBack});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  // 0: All, 1: Income, 2: Expense
+  int _selectedFilter = 0;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
+    return Consumer<WalletProvider>(
+      builder: (context, provider, child) {
+        // Filter logic
+        List<TransactionItem> displayedTransactions = provider.transactions;
+        if (_selectedFilter == 1) {
+          displayedTransactions = provider.transactions
+              .where((t) => t.type == TransactionType.income)
+              .toList();
+        } else if (_selectedFilter == 2) {
+          displayedTransactions = provider.transactions
+              .where((t) => t.type == TransactionType.expense)
+              .toList();
+        }
+
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          // Use callback if provided (from IndexedStack)
+                          if (widget.onBack != null) {
+                            widget.onBack!();
+                          } else if (Navigator.canPop(context)) {
+                            // Otherwise try to pop if possible
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Movimientos',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new, size: 20),
-              ),
-              const SizedBox(width: 16),
-              const Text(
-                'Movimientos',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
 
-          // Filters
-          Row(
-            children: [
-              _buildFilterChip('Todos', isSelected: true),
-              const SizedBox(width: 12),
-              _buildFilterChip('Ingresos', isSelected: false),
-              const SizedBox(width: 12),
-              _buildFilterChip('Gastos', isSelected: false),
-            ],
-          ),
-          const SizedBox(height: 32),
+                // Filters
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Todos', 0),
+                      const SizedBox(width: 12),
+                      _buildFilterChip('Ingresos', 1),
+                      const SizedBox(width: 12),
+                      _buildFilterChip('Gastos', 2),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-          // Date Header
-          Text(
-            'AYER',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade400,
-              fontSize: 14,
+                // List
+                Expanded(
+                  child: displayedTransactions.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No hay movimientos',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          itemCount: displayedTransactions.length,
+                          itemBuilder: (context, index) {
+                            final tx = displayedTransactions[index];
+                            final isIncome = tx.type == TransactionType.income;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _buildTransactionCard(
+                                icon: isIncome
+                                    ? Icons.savings_outlined
+                                    : Icons.bolt,
+                                iconColor: isIncome
+                                    ? const Color(0xFF10B981)
+                                    : Colors.black87,
+                                bgIconColor: isIncome
+                                    ? const Color(0xFF10B981).withOpacity(0.1)
+                                    : Colors.red.shade50,
+                                title: tx.title,
+                                time: DateFormat('hh:mm a').format(tx.date),
+                                amount:
+                                    '${isIncome ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
+                                amountColor: isIncome
+                                    ? const Color(0xFF10B981)
+                                    : Colors.red,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Transactions
-          _buildTransactionCard(
-            icon: Icons.bolt,
-            iconColor: Colors.black87,
-            bgIconColor: Colors.red.shade50,
-            title: 'Pago en Comercio (Demo)',
-            time: '10:25 a.m.',
-            amount: '-\$5.00',
-            amountColor: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          _buildTransactionCard(
-            icon: Icons.savings_outlined,
-            iconColor: Colors.black87,
-            bgIconColor: const Color(0xFF10B981).withValues(alpha: 0.1),
-            title: 'Cambio en Oxxo',
-            time: '10:25 a.m.',
-            amount: '+\$39.21',
-            amountColor: const Color(0xFF10B981),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildFilterChip(String label, {required bool isSelected}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF0F172A) : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.grey.shade600,
-          fontWeight: FontWeight.w600,
+  Widget _buildFilterChip(String label, int index) {
+    final isSelected = _selectedFilter == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0F172A) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade600,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -112,7 +180,7 @@ class HistoryScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
