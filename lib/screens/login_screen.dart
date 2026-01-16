@@ -205,8 +205,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingresa tu contraseña';
                       }
-                      if (value.length < 6) {
-                        return 'La contraseña debe tener al menos 6 caracteres';
+                      if (value.length < 8) {
+                        return 'La contraseña debe tener al menos 8 caracteres';
                       }
                       return null;
                     },
@@ -292,7 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
+                            builder: (context) => RegisterScreen(),
                           ),
                         );
                       },

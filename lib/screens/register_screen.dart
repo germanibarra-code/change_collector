@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../supabase/client.dart';
+import '../widgets/password_strength_indicator.dart';
 import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -159,17 +160,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response.user != null && mounted) {
         // Si la confirmación de email está desactivada, el usuario ya está autenticado
         if (response.session != null) {
-          // Usuario autenticado inmediatamente (email confirmation disabled)
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          await userProvider.updateUserProfile(
-            fullName,
-            _emailController.text.trim(),
-            0,
-          );
-
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('¡Cuenta creada exitosamente! 🎉'),
@@ -623,6 +613,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         TextFormField(
           controller: _passwordController,
           obscureText: _obscurePassword,
+          onChanged: (value) {
+            // Actualizar el indicador de fortaleza en tiempo real
+            setState(() {});
+          },
           decoration: InputDecoration(
             labelText: 'Contraseña',
             prefixIcon: const Icon(Icons.lock_outline),
@@ -681,6 +675,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Indicador de fortaleza de contraseña
+        PasswordStrengthIndicator(password: _passwordController.text),
       ],
     );
   }
