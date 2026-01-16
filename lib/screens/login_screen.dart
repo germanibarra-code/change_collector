@@ -213,8 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                  ), //hola
-
+                  ), //german
                   const SizedBox(height: 10),
 
                   // Olvidaste tu contraseña
