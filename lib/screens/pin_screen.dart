@@ -21,10 +21,12 @@ class _PinScreenState extends State<PinScreen> {
       if (_pin.length == 4) {
         // Auto-submit after small delay
         Future.delayed(const Duration(milliseconds: 300), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
         });
       }
     }

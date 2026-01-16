@@ -48,10 +48,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         // Navegar a la pantalla principal
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        if (mounted) {
+          // Added mounted check before navigation
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../widgets/avatar_selector.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -134,12 +133,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
 
               // Avatar Selector Widget
-              Container(
+              SizedBox(
                 height: 60,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: icons.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (context, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final isSelected = _selectedAvatarIndex == index;
                     return GestureDetector(

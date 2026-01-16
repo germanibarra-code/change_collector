@@ -53,7 +53,6 @@ class MyApp extends StatelessWidget {
                 primary: Color(0xFF047857), // Deep Green for Primary elements
                 secondary: Color(0xFF10B981), // Emerald for Accents
                 surface: Colors.white,
-                background: Colors.white,
                 onPrimary: Colors.white,
                 onSecondary: Colors.white,
               ),
@@ -99,7 +98,6 @@ class MyApp extends StatelessWidget {
                 primary: Color(0xFF10B981), // Emerald for Primary
                 secondary: Color(0xFF34D399), // Light Emerald for Accents
                 surface: Color(0xFF1E293B),
-                background: Color(0xFF0F172A),
                 onPrimary: Colors.white,
                 onSecondary: Colors.white,
                 onSurface: Color(0xFFE2E8F0),

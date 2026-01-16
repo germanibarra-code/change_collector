@@ -8,7 +8,6 @@ import '../widgets/balance_card.dart';
 import '../widgets/quick_action.dart';
 import '../widgets/tour_overlay.dart';
 import '../providers/app_state_provider.dart';
-import 'profile_screen.dart';
 import 'history_screen.dart';
 import 'analysis_screen.dart';
 import 'account_screen.dart';
@@ -492,6 +491,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // QR SCAN SIMULATOR LOGIC
   void _simulateScan(BuildContext context) async {
+    // Capture context before async gaps
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     // 1. Show "Scanning" dialog
     showDialog(
       context: context,
@@ -514,15 +517,17 @@ class _HomeScreenState extends State<HomeScreen> {
     // 2. Wait 2 seconds
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    Navigator.pop(context); // Close loading
+    navigator.pop(); // Close loading
 
     // 3. Randomize a discovered amount
     final amounts = [12.50, 45.00, 8.20, 150.00, 5.00];
     final amount = (amounts..shuffle()).first;
 
     // 4. Show "Found" dialog with confirm
+    if (!mounted) return;
+    final currentContext = context; // Store context before async boundary
     showModalBottomSheet(
-      context: context,
+      context: currentContext,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -549,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   // ADD TO PROVIDER
                   Provider.of<WalletProvider>(
-                    context,
+                    ctx,
                     listen: false,
                   ).addTransaction(
                     TransactionItem(
@@ -561,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text('¡Ahorro registrado exitosamente! 💰'),
                     ),

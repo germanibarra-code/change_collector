@@ -191,11 +191,14 @@ class AccountScreen extends StatelessWidget {
                 ),
               );
 
-              if (confirm == true) {
+              if (confirm == true && context.mounted) {
+                if (!context.mounted) return;
                 await Provider.of<UserProvider>(
                   context,
                   listen: false,
                 ).clearProfile(); // If implemented, or just skip
+
+                if (!context.mounted) return;
                 await Provider.of<WalletProvider>(
                   context,
                   listen: false,
@@ -291,7 +294,7 @@ class AccountScreen extends StatelessWidget {
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: theme.colorScheme.primary,
+          activeThumbColor: theme.colorScheme.primary,
         ),
       ),
     );
