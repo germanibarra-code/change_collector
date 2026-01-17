@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase/client.dart';
 import '../widgets/password_strength_indicator.dart';
 import 'home_screen.dart';
@@ -197,14 +196,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         // Mensaje de error más amigable
         String errorMessage = 'Error al crear cuenta';
-        if (e.toString().contains('captcha')) {
+        final errorString = e.toString().toLowerCase();
+
+        if (errorString.contains('captcha')) {
           errorMessage =
-              'Error: hCaptcha activado. Por favor desactívalo en Supabase Dashboard:\n'
-              'Authentication > Settings > Security > Disable hCaptcha';
-        } else if (e.toString().contains('already registered')) {
-          errorMessage = 'Este correo ya está registrado';
+              '🔒 Error de seguridad. Por favor contacta al soporte.';
+        } else if (errorString.contains('already registered') ||
+            errorString.contains('user already registered') ||
+            errorString.contains('email already exists')) {
+          errorMessage =
+              '⚠️ Este correo ya está registrado. ¿Deseas iniciar sesión?';
+        } else if (errorString.contains('invalid email') ||
+            errorString.contains('email is invalid')) {
+          errorMessage = '❌ Correo electrónico inválido. Verifica el formato.';
+        } else if (errorString.contains('password') &&
+            errorString.contains('weak')) {
+          errorMessage = '🔑 Contraseña muy débil. Usa al menos 6 caracteres.';
+        } else if (errorString.contains('network') ||
+            errorString.contains('connection')) {
+          errorMessage = '📡 Error de conexión. Verifica tu internet.';
+        } else if (errorString.contains('timeout')) {
+          errorMessage = '⏱️ Tiempo de espera agotado. Intenta nuevamente.';
         } else {
-          errorMessage = 'Error: ${e.toString()}';
+          errorMessage = '❌ Error al crear cuenta. Intenta nuevamente.';
         }
 
         _showError(errorMessage);
@@ -213,22 +227,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _verifyAccount() async {
+    if (_verificationCodeController.text.trim().isEmpty) {
+      _showError('Por favor ingresa el código de verificación');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      // Aquí puedes implementar la verificación del código
-      // Por ahora, simplemente navegamos a la pantalla principal
-
-      final fullName =
-          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.updateUserProfile(
-        fullName,
-        _emailController.text.trim(),
-        0,
+      // Verificar el código OTP
+      final response = await supabase.auth.verifyOTP(
+        email: _emailController.text.trim(),
+        token: _verificationCodeController.text.trim(),
+        type: OtpType.signup,
       );
 
-      if (mounted) {
+      if (response.user != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Cuenta verificada exitosamente! 🎉'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+
+        // Navegar a la pantalla principal
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -238,7 +260,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showError('Error al verificar cuenta: ${e.toString()}');
+
+        String errorMessage = 'Error al verificar cuenta';
+        if (e.toString().contains('invalid') ||
+            e.toString().contains('expired')) {
+          errorMessage = 'Código inválido o expirado. Solicita uno nuevo.';
+        } else {
+          errorMessage = 'Error: ${e.toString()}';
+        }
+
+        _showError(errorMessage);
       }
     }
   }
@@ -348,14 +379,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 if (_currentStep == 2) ...[
                   const SizedBox(height: 20),
                   TextButton(
-                    onPressed: () {
-                      // Reenviar código
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Código reenviado a tu correo 📧'),
-                          backgroundColor: Color(0xFF10B981),
-                        ),
-                      );
+                    onPressed: () async {
+                      // Reenviar código OTP
+                      try {
+                        await supabase.auth.resend(
+                          type: OtpType.signup,
+                          email: _emailController.text.trim(),
+                        );
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Código reenviado a tu correo 📧'),
+                              backgroundColor: Color(0xFF10B981),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          _showError(
+                            'Error al reenviar código: ${e.toString()}',
+                          );
+                        }
+                      }
                     },
                     child: const Text(
                       '¿No recibiste el código? Reenviar',
