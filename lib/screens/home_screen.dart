@@ -11,6 +11,7 @@ import '../providers/app_state_provider.dart';
 import 'history_screen.dart';
 import 'analysis_screen.dart';
 import 'account_screen.dart';
+import 'transfer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -216,6 +217,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Transfer Button (Fourth Option)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TransferScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.attach_money),
+                          label: const Text('Transferencia Bancaria'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            textStyle: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 32),
