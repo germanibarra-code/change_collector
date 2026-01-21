@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:math';
 import '../providers/wallet_provider.dart';
 import '../models/bank_account.dart';
 
@@ -19,8 +20,7 @@ class _TransferScreenState extends State<TransferScreen> {
       TextEditingController();
   final TextEditingController _accountHolderController =
       TextEditingController();
-  final TextEditingController _rfcController = TextEditingController();
-  final TextEditingController _curpController = TextEditingController();
+  final TextEditingController _aliasController = TextEditingController();
 
   BankType? _selectedBank;
   BankAccount? _selectedAccount;
@@ -38,8 +38,7 @@ class _TransferScreenState extends State<TransferScreen> {
     _amountController.dispose();
     _accountNumberController.dispose();
     _accountHolderController.dispose();
-    _rfcController.dispose();
-    _curpController.dispose();
+    _aliasController.dispose();
     super.dispose();
   }
 
@@ -74,9 +73,9 @@ class _TransferScreenState extends State<TransferScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submitTransfer() async {
@@ -92,10 +91,9 @@ class _TransferScreenState extends State<TransferScreen> {
       BankAccount accountToUse;
 
       if (_isNewAccount) {
-        if (_rfcController.text.isEmpty ||
-            _curpController.text.isEmpty ||
-            _accountNumberController.text.isEmpty ||
+        if (_accountNumberController.text.isEmpty ||
             _accountHolderController.text.isEmpty ||
+            _aliasController.text.isEmpty ||
             _selectedBank == null) {
           _showError('Por favor, completa todos los datos requeridos');
           return;
@@ -105,8 +103,7 @@ class _TransferScreenState extends State<TransferScreen> {
           id: const Uuid().v4(),
           accountHolder: _accountHolderController.text,
           accountNumber: _accountNumberController.text,
-          rfc: _rfcController.text,
-          curp: _curpController.text,
+          alias: _aliasController.text,
           bankType: _selectedBank!,
           bankName: _getBankName(_selectedBank!),
           isDefault: false,
@@ -187,9 +184,7 @@ class _TransferScreenState extends State<TransferScreen> {
           children: [
             ElevatedButton(
               onPressed: _currentPage > 0 ? _previousPage : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
               child: const Text('Anterior'),
             ),
             Text(
@@ -283,9 +278,9 @@ class _TransferScreenState extends State<TransferScreen> {
                 ...walletProvider.bankAccounts.map((account) {
                   return Card(
                     child: ListTile(
-                      title: Text(account.accountHolder),
+                      title: Text(account.alias),
                       subtitle: Text(
-                        '${account.bankName} • ****${account.accountNumber.substring(account.accountNumber.length - 4)}',
+                        '${account.bankName} • ${account.accountHolder}',
                       ),
                       trailing: Radio<BankAccount>(
                         value: account,
@@ -343,8 +338,7 @@ class _TransferScreenState extends State<TransferScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle,
-                  size: 80, color: Colors.green.shade400),
+              Icon(Icons.check_circle, size: 80, color: Colors.green.shade400),
               const SizedBox(height: 24),
               const Text(
                 'Cuenta Seleccionada',
@@ -398,30 +392,14 @@ class _TransferScreenState extends State<TransferScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'RFC (Registro Federal de Contribuyentes)',
+            'Alias (Nombre para recordar esta cuenta)',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: _rfcController,
+            controller: _aliasController,
             decoration: InputDecoration(
-              hintText: 'Ej: ABC123456XYZ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              contentPadding: const EdgeInsets.all(16),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'CURP (Clave Única de Registro de Población)',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _curpController,
-            decoration: InputDecoration(
-              hintText: 'Ej: ABC123456HDFRML00',
+              hintText: 'Ej: Cuenta Ahorro, Mi Tarjeta, etc.',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -469,10 +447,9 @@ class _TransferScreenState extends State<TransferScreen> {
     final isValidForConfirmation =
         (_selectedAccount != null) ||
         (_isNewAccount &&
-            _rfcController.text.isNotEmpty &&
-            _curpController.text.isNotEmpty &&
             _accountNumberController.text.isNotEmpty &&
             _accountHolderController.text.isNotEmpty &&
+            _aliasController.text.isNotEmpty &&
             _selectedBank != null);
 
     return SingleChildScrollView(
@@ -522,6 +499,20 @@ class _TransferScreenState extends State<TransferScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        const Text('Cuenta:'),
+                        Flexible(
+                          child: Text(
+                            _selectedAccount?.alias ?? _aliasController.text,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         const Text('Banco:'),
                         Flexible(
                           child: Text(
@@ -552,24 +543,10 @@ class _TransferScreenState extends State<TransferScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('RFC:'),
+                        const Text('Cuenta:'),
                         Flexible(
                           child: Text(
-                            _selectedAccount?.rfc ?? _rfcController.text,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.end,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('CURP:'),
-                        Flexible(
-                          child: Text(
-                            _selectedAccount?.curp ?? _curpController.text,
+                            '****${(_selectedAccount?.accountNumber ?? _accountNumberController.text).substring(max(0, (_selectedAccount?.accountNumber ?? _accountNumberController.text).length - 4))}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.end,
                           ),

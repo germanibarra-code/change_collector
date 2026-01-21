@@ -13,8 +13,7 @@ class BankAccount {
   final String id;
   final String accountHolder;
   final String accountNumber;
-  final String rfc;
-  final String curp;
+  final String alias;
   final BankType bankType;
   final String bankName;
   final bool isDefault;
@@ -23,8 +22,7 @@ class BankAccount {
     required this.id,
     required this.accountHolder,
     required this.accountNumber,
-    required this.rfc,
-    required this.curp,
+    required this.alias,
     required this.bankType,
     required this.bankName,
     this.isDefault = false,
@@ -35,8 +33,7 @@ class BankAccount {
       'id': id,
       'accountHolder': accountHolder,
       'accountNumber': accountNumber,
-      'rfc': rfc,
-      'curp': curp,
+      'alias': alias,
       'bankType': bankType.index,
       'bankName': bankName,
       'isDefault': isDefault,
@@ -48,8 +45,7 @@ class BankAccount {
       id: map['id'],
       accountHolder: map['accountHolder'],
       accountNumber: map['accountNumber'],
-      rfc: map['rfc'],
-      curp: map['curp'],
+      alias: map['alias'] ?? '',
       bankType: BankType.values[map['bankType']],
       bankName: map['bankName'],
       isDefault: map['isDefault'] ?? false,
