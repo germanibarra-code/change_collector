@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/wallet_provider.dart';
-import '../providers/user_provider.dart';
 import '../models/bank_account.dart';
 
 class TransferScreen extends StatefulWidget {
@@ -46,23 +45,15 @@ class _TransferScreenState extends State<TransferScreen> {
 
   void _nextPage() {
     if (_currentPage == 0 && _amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, ingresa un monto')),
-      );
+      _showError('Por favor, ingresa un monto');
       return;
     }
     if (_currentPage == 1 && _selectedAccount == null && !_isNewAccount) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, selecciona una cuenta o crea una nueva'),
-        ),
-      );
+      _showError('Por favor, selecciona una cuenta o crea una nueva');
       return;
     }
-    if (_currentPage == 2 && _selectedBank == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, selecciona un banco')),
-      );
+    if (_currentPage == 2 && _isNewAccount && _selectedBank == null) {
+      _showError('Por favor, selecciona un banco');
       return;
     }
     if (_currentPage < 3) {
@@ -82,11 +73,23 @@ class _TransferScreenState extends State<TransferScreen> {
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _submitTransfer() async {
     final walletProvider = context.read<WalletProvider>();
 
+    // Validate that we have a valid account
+    if (_selectedAccount == null && !_isNewAccount) {
+      _showError('Por favor, selecciona una cuenta');
+      return;
+    }
+
     try {
-      BankAccount accountToUse = _selectedAccount!;
+      BankAccount accountToUse;
 
       if (_isNewAccount) {
         if (_rfcController.text.isEmpty ||
@@ -94,11 +97,7 @@ class _TransferScreenState extends State<TransferScreen> {
             _accountNumberController.text.isEmpty ||
             _accountHolderController.text.isEmpty ||
             _selectedBank == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Por favor, completa todos los datos requeridos'),
-            ),
-          );
+          _showError('Por favor, completa todos los datos requeridos');
           return;
         }
 
@@ -114,6 +113,8 @@ class _TransferScreenState extends State<TransferScreen> {
         );
 
         await walletProvider.addBankAccount(accountToUse);
+      } else {
+        accountToUse = _selectedAccount!;
       }
 
       // Process transfer
@@ -132,9 +133,7 @@ class _TransferScreenState extends State<TransferScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      _showError('Error: $e');
     }
   }
 
@@ -188,7 +187,9 @@ class _TransferScreenState extends State<TransferScreen> {
           children: [
             ElevatedButton(
               onPressed: _currentPage > 0 ? _previousPage : null,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+              ),
               child: const Text('Anterior'),
             ),
             Text(
@@ -298,7 +299,7 @@ class _TransferScreenState extends State<TransferScreen> {
                       ),
                     ),
                   );
-                }),
+                }).toList(),
               const SizedBox(height: 24),
               GestureDetector(
                 onTap: () {
@@ -342,7 +343,8 @@ class _TransferScreenState extends State<TransferScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle, size: 80, color: Colors.green.shade400),
+              Icon(Icons.check_circle,
+                  size: 80, color: Colors.green.shade400),
               const SizedBox(height: 24),
               const Text(
                 'Cuenta Seleccionada',
@@ -375,7 +377,7 @@ class _TransferScreenState extends State<TransferScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<BankType>(
-            initialValue: _selectedBank,
+            value: _selectedBank,
             items: BankType.values.map((bank) {
               return DropdownMenuItem(
                 value: bank,
@@ -464,6 +466,15 @@ class _TransferScreenState extends State<TransferScreen> {
   }
 
   Widget _buildConfirmationPage() {
+    final isValidForConfirmation =
+        (_selectedAccount != null) ||
+        (_isNewAccount &&
+            _rfcController.text.isNotEmpty &&
+            _curpController.text.isNotEmpty &&
+            _accountNumberController.text.isNotEmpty &&
+            _accountHolderController.text.isNotEmpty &&
+            _selectedBank != null);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -475,76 +486,100 @@ class _TransferScreenState extends State<TransferScreen> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Monto:'),
-                      Text(
-                        '\$${_amountController.text}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
+          if (!isValidForConfirmation)
+            Card(
+              color: Colors.red.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Error: Completa todos los datos requeridos',
+                  style: TextStyle(color: Colors.red.shade700),
+                ),
+              ),
+            )
+          else
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Monto:'),
+                        Text(
+                          '\$${_amountController.text}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Banco:'),
-                      Text(
-                        _selectedAccount?.bankName ??
-                            _getBankName(_selectedBank!),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Titular:'),
-                      Text(
-                        _selectedAccount?.accountHolder ??
-                            _accountHolderController.text,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('RFC:'),
-                      Text(
-                        _selectedAccount?.rfc ?? _rfcController.text,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('CURP:'),
-                      Text(
-                        _selectedAccount?.curp ?? _curpController.text,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Banco:'),
+                        Flexible(
+                          child: Text(
+                            _selectedAccount?.bankName ??
+                                _getBankName(_selectedBank ?? BankType.otro),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Titular:'),
+                        Flexible(
+                          child: Text(
+                            _selectedAccount?.accountHolder ??
+                                _accountHolderController.text,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('RFC:'),
+                        Flexible(
+                          child: Text(
+                            _selectedAccount?.rfc ?? _rfcController.text,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('CURP:'),
+                        Flexible(
+                          child: Text(
+                            _selectedAccount?.curp ?? _curpController.text,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 32),
           Container(
             padding: const EdgeInsets.all(16),
